@@ -52,17 +52,17 @@ class GithubBusiness extends AbstractBusiness implements IGithubBusiness {
     JobRunResponseDto updateDataWithResponse(Date lastRunDate, Object configInfo) {
         List<String> repositories = this.findAllRepositories(configInfo, lastRunDate);
         for (String repo : repositories) {
-            List commits = this.getAllCommitsForRepo(configInfo, repo);
-            if (!commits.isEmpty()) {
-                this.githubEsRepository.save(commits);
-            }
-            List pulls = this.getAllPullRequestsForRepo(configInfo, repo);
-            if (!pulls.isEmpty()) {
-                this.githubEsRepository.save(pulls);
-            }
+            addToEsRepository(this.getAllCommitsForRepo(configInfo, repo));
+			addToEsRepository(this.getAllPullRequestsForRepo(configInfo, repo));
         }
         return [type: type(), status: JobHistory.Status.success, reccordsCount: 0] as JobRunResponseDto
     }
+
+	private addToEsRepository(List changesets) {
+		if (changesets) {
+			this.githubEsRepository.save(changesets);
+		}
+	}
 
     private List<String> findAllRepositories(final Object configInfo, final Date fromDate) {
         final String path = "/users/$configInfo.repository_owner/repos";
