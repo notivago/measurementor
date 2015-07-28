@@ -160,12 +160,8 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
     }
 
     private IMeasureMentorBusiness findByType(final String type) {
-        for (final IMeasureMentorBusiness mmb : this.measureMentorBusinesses) {
-            if (mmb.type() == type) {
-                return mmb;
-            }
-        }
-        return null;
+		
+        return this.measureMentorBusinesses.find({business -> business.type() == type});
     }
 
     private static boolean isCollectionOrArray(final Object value) {
