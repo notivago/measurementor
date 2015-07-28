@@ -89,15 +89,9 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
 
     @Override
     String validateConfig(final Object config) {
-        final String errorMessage
-        final IMeasureMentorBusiness plugin = this.findByType(config.type)
-        if (plugin) {
-            errorMessage = plugin.validateConfig(config)
-        } else {
-            errorMessage = "No measure mentor configured for: $config.type"
-        }
-
-        return errorMessage
+        final IMeasureMentorBusiness plugin = this.findByType(config.type);
+		
+        return plugin ? plugin.validateConfig(config) : "No measure mentor configured for: $config.type";
     }
 
     private static List<JobRunRequestDto> createRequestsFromConfig(
