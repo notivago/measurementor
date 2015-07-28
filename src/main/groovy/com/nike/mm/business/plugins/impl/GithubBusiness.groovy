@@ -65,22 +65,21 @@ class GithubBusiness extends AbstractBusiness implements IGithubBusiness {
 	}
 
     private List<String> findAllRepositories(final Object configInfo, final Date fromDate) {
-        final String path = "/users/$configInfo.repository_owner/repos";
-        HttpRequestDto dto = [url: configInfo.url, path: path, query: [access_token: configInfo.access_token, start:
-				start, limit: limit]] as HttpRequestDto;
-        return this.githubWsRepository.findAllRepositories(dto);
+        HttpRequestDto request = createRequest("/users/$configInfo.repository_owner/repos", configInfo);
+        return this.githubWsRepository.findAllRepositories(request);
     }
 
     private List<Github> getAllCommitsForRepo(final Object configInfo, final String repo) {
-        final String path = "/repos/$configInfo.repository_owner/$repo/commits";
-        final HttpRequestDto dto = [url: configInfo.url, path: path, query: [access_token: configInfo.access_token, start:
-				start, limit: limit]] as HttpRequestDto
-        return this.githubWsRepository.findAllCommitsForRepository(dto);
+		HttpRequestDto request = createRequest("/repos/$configInfo.repository_owner/$repo/commits", configInfo);
+        return this.githubWsRepository.findAllCommitsForRepository(request);
     }
 
     private List<Github> getAllPullRequestsForRepo(final Object configInfo, final String repo) {
-        final String path = "/repos/$configInfo.repository_owner/$repo/pulls";
-        final HttpRequestDto dto = [url: configInfo.url, path: path, query: [access_token: configInfo.access_token, start: start, limit: limit]] as HttpRequestDto
-        this.githubWsRepository.findAllPullRequests(dto);
+		HttpRequestDto request = createRequest("/repos/$configInfo.repository_owner/$repo/pulls", configInfo);
+        this.githubWsRepository.findAllPullRequests(request);
     }
+	
+	private HttpRequestDto createRequest(String path, configInfo) {
+		return [url: configInfo.url, path: path, query: [access_token: configInfo.access_token, start: start, limit: limit]];
+	}
 }
