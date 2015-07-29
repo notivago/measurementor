@@ -1,5 +1,7 @@
 package com.nike.mm.facade.impl
 
+import static com.nike.mm.core.CollectionsTools.enforceAsCollection;
+
 import com.google.common.collect.Lists
 import com.nike.mm.business.internal.IJobHistoryBusiness
 import com.nike.mm.business.internal.IMeasureMentorJobsConfigBusiness
@@ -98,13 +100,9 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
             final String jobid, final String jobHistoryId, final def configs) {
 
         final List<JobRunRequestDto> list = Lists.newArrayList()
-        if (isCollectionOrArray(configs)) {
-            configs.each { final config ->
-                list.add(createRequestfromConfig(jobid, jobHistoryId, config))
-            }
-        } else {
-            list.add(createRequestfromConfig(jobid, jobHistoryId, configs))
-        }
+		enforceAsCollection( configs ).each { final config ->
+			list.add(createRequestfromConfig(jobid, jobHistoryId, config))
+		}
         return list
     }
 
@@ -162,9 +160,5 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
     private IMeasureMentorBusiness findByType(final String type) {
 		
         return this.measureMentorBusinesses.find({business -> business.type() == type});
-    }
-
-    private static boolean isCollectionOrArray(final Object value) {
-        [Collection, Object[]].any { it.isAssignableFrom(value.getClass()) }
     }
 }
