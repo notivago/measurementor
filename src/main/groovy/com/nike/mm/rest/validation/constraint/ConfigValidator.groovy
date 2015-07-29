@@ -1,5 +1,7 @@
 package com.nike.mm.rest.validation.constraint
 
+import static com.nike.mm.core.CollectionsTools.enforceAsCollection;
+
 import com.google.common.collect.Lists
 import com.nike.mm.facade.impl.MeasureMentorRunFacade
 import com.nike.mm.rest.validation.annotation.ValidConfig
@@ -24,34 +26,28 @@ class ConfigValidator implements ConstraintValidator<ValidConfig, Object> {
 
     @Override
     boolean isValid(final Object value, final ConstraintValidatorContext context) {
-        final List<String> errorMessages = Lists.newArrayList()
-        if (value) {
-            final boolean isCollection = isCollectionOrArray(value)
-            if (isCollection) {
-                value.each { final config ->
-                    validateSingleConfig(config, errorMessages)
-                }
-            } else {
-                validateSingleConfig(value, errorMessages)
-            }
-        } else {
-            addViolation(CONFIGURATION_MANDATORY, errorMessages)
-        }
+        final List<String> errorMessages = Lists.newArrayList();
 
-        boolean isValid = true
-        if (errorMessages.size()) {
-            isValid = false
-            context.disableDefaultConstraintViolation()
-            errorMessages.each { final errorMessage ->
-                context.buildConstraintViolationWithTemplate(errorMessage).addConstraintViolation()
-            }
-        }
-        return isValid
+		if (value) {
+			enforceAsCollection( value ).each { final config -> validateSingleConfig(config, errorMessages) }
+		} else {
+			addViolation(CONFIGURATION_MANDATORY, errorMessages);
+		}
+		
+		addMessagesToContext(context, errorMessages);
+		
+        return !errorMessages;
     }
 
-    private static boolean isCollectionOrArray(final Object value) {
-        [Collection, Object[]].any { it.isAssignableFrom(value.getClass()) }
-    }
+	private addMessagesToContext(ConstraintValidatorContext context, List errorMessages) {
+		if(!errorMessages) {
+			return;
+		}
+		context.disableDefaultConstraintViolation()
+		errorMessages.each { final errorMessage ->
+			context.buildConstraintViolationWithTemplate(errorMessage).addConstraintViolation()
+		}
+	}
 
     private void validateSingleConfig(final Object config, final List<String> errorMessages) {
         final String errorMessage
