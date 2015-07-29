@@ -27,31 +27,27 @@ class GithubWsRepository implements IGithubWsRepository {
 	
 	List<Github> findAllCommitsForRepository(final HttpRequestDto dto) {
 		String originalPath = dto.getPath();
-		def json =            this.httpRequestService.callRestfulUrl(dto);
-		List<Github> rlist =  [];
-		for(def c : json) {
-//            def updatedDate = UtilitiesService.cleanGithubDate(c.commit.committer.date)
-//            if(updatedDate >= fromDate) {
-			dto.path =      "$originalPath/$c.sha";
-			def commit =     this.httpRequestService.callRestfulUrl(dto)
-			def githubData = this.githubEsRepository.findBySha(c.sha)
-			if(githubData) {
-				githubData.created 		= commit.commit.committer.date
-				githubData.linesAdded 	= commit.stats.additions
-				githubData.linesRemoved = commit.stats.deletions
-				githubData.author 		= commit.commit.committer.name
-			} else {
-				githubData = [
-						sha: c.sha,
-						created: commit.commit.committer.date,
-						linesAdded: commit.stats.additions,
-						linesRemoved: commit.stats.deletions,
-						author: commit.commit.committer.name
-				] as Github;
-			}
-			rlist.add(githubData);
+		def json 			= this.httpRequestService.callRestfulUrl(dto);
+		
+		return json.collect {c ->  dto.path =      "$originalPath/$c.sha";
+			retrieveCommit(dto, c.sha)
+		};
+	}
+
+	private Github retrieveCommit(HttpRequestDto dto, sha) {
+		def commit 		= this.httpRequestService.callRestfulUrl(dto)
+		def githubData 	= this.githubEsRepository.findBySha(sha)
+		
+		if(!githubData) {
+			githubData = [sha: sha]
 		}
-		return rlist;
+		 
+		githubData.created 		= commit.commit.committer.date
+		githubData.linesAdded 	= commit.stats.additions
+		githubData.linesRemoved = commit.stats.deletions
+		githubData.author 		= commit.commit.committer.name
+		
+		return githubData
 	}
 	
 	List<Github> findAllPullRequests(final HttpRequestDto dto) {
