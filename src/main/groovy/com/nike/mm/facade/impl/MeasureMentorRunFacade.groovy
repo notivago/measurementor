@@ -99,11 +99,7 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
     private static List<JobRunRequestDto> createRequestsFromConfig(
             final String jobid, final String jobHistoryId, final def configs) {
 
-        final List<JobRunRequestDto> list = Lists.newArrayList()
-		enforceAsCollection( configs ).each { final config ->
-			list.add(createRequestfromConfig(jobid, jobHistoryId, config))
-		}
-        return list
+		return enforceAsCollection( configs ).collect { final config -> createRequestfromConfig(jobid, jobHistoryId, config) }
     }
 
     /**
