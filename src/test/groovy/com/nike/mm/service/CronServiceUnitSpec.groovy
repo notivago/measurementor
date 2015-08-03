@@ -8,7 +8,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.ScheduledFuture
 
-class CronServiceSpec extends Specification {
+class CronServiceUnitSpec extends Specification {
 
     CronService cronService
     ThreadPoolTaskScheduler threadPoolTaskScheduler
