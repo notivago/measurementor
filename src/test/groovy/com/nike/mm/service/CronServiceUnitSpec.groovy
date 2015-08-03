@@ -3,9 +3,12 @@ package com.nike.mm.service
 import com.nike.mm.facade.IMeasureMentorJobsConfigFacade
 import com.nike.mm.service.impl.CronJobRuntimeException
 import com.nike.mm.service.impl.CronService
+
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
+
 import spock.lang.Specification
 
+import java.text.MessageFormat;
 import java.util.concurrent.ScheduledFuture
 
 class CronServiceUnitSpec extends Specification {
@@ -142,4 +145,22 @@ class CronServiceUnitSpec extends Specification {
         1 * future.cancel(_)                                     >> true
     }
 
+	def "adding a valid cron job and then disabling it fail when the service cant be stopped"() {
+
+		setup:
+		String jobId                                             = "jobOnAndJobOff"
+		String cron                                              = "0 * * * * MON-FRI"
+		ScheduledFuture future                                   = Mock(ScheduledFuture.class)
+
+		when:
+		this.cronService.processJob(jobId)
+		this.cronService.processJob(jobId)
+
+		then:
+		2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [[id: jobId, jobOn: true, cron: cron],[id: jobId, jobOn: false, cron: cron]]
+		1 * this.threadPoolTaskScheduler.schedule(_, _)          >> future
+		1 * future.cancel(_)                                     >> false
+		CronJobRuntimeException exception = thrown();
+		exception.message == MessageFormat.format(CronService.LOG_UNABLE_TO_CANCEL_JOB, "jobOnAndJobOff");
+	}
 }
