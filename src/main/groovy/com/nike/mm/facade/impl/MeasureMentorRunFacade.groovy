@@ -96,7 +96,7 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
         return plugin ? plugin.validateConfig(config) : "No measure mentor configured for: $config.type";
     }
 
-    private static List<JobRunRequestDto> createRequestsFromConfig(
+    private List<JobRunRequestDto> createRequestsFromConfig(
             final String jobid, final String jobHistoryId, final def configs) {
 
 		return enforceAsCollection( configs ).collect { final config -> createRequestfromConfig(jobid, jobHistoryId, config) }
@@ -109,7 +109,7 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
      * @param config - Configuration that will be executed
      * @return Request object
      */
-    private static JobRunRequestDto createRequestfromConfig(
+    private JobRunRequestDto createRequestfromConfig(
             final String jobid, final String jobHistoryId, final def config) {
         return new JobRunRequestDto(
                 jobid: jobid,
@@ -141,13 +141,13 @@ class MeasureMentorRunFacade implements IMeasureMentorRunFacade {
         }
     }
 
-    private static JobRunResponseDto createFailureResponse(final String pluginType, final String errorMessage) {
+    private JobRunResponseDto createFailureResponse(final String pluginType, final String errorMessage) {
         log.warn("Plugin $pluginType failed: $errorMessage")
         new JobRunResponseDto(type: pluginType, recordsCount: 0, status: JobHistory.Status.error, errorMessage:
                 errorMessage)
     }
 
-    private static JobRunResponseDto createExceptionResponse(final String pluginType, final Throwable e) {
+    private JobRunResponseDto createExceptionResponse(final String pluginType, final Throwable e) {
         log.error("Plugin $pluginType failed: $e.message", e)
         new JobRunResponseDto(type: pluginType, recordsCount: 0, status: JobHistory.Status.error, errorMessage:
                 e.message)
