@@ -5,6 +5,7 @@ import com.nike.mm.dto.MeasureMentorJobsConfigDto
 import com.nike.mm.facade.IMeasureMentorJobsConfigFacade
 import com.nike.mm.facade.IMeasureMentorRunFacade
 import com.nike.mm.service.ICronService
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.Trigger
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
@@ -12,6 +13,8 @@ import org.springframework.scheduling.support.CronTrigger
 import org.springframework.stereotype.Service
 
 import java.text.MessageFormat
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture
 
 @Service
@@ -21,7 +24,7 @@ class CronService implements ICronService {
 	static final String LOG_JOB_NOT_FOUND = "Unable to find job with ID {0}"
 	static final String LOG_UNABLE_TO_CANCEL_JOB = "Found but could not cancel job with ID {0}"
 
-	static private final Map<String, ScheduledFuture> SCHEDULED_TASKS = Maps.newHashMap();
+	static private final Map<String, ScheduledFuture> SCHEDULED_TASKS = new ConcurrentHashMap();
 
 	@Autowired
 	ThreadPoolTaskScheduler threadPoolTaskScheduler
@@ -66,10 +69,6 @@ class CronService implements ICronService {
 			return;
 		}
 		final ScheduledFuture future = SCHEDULED_TASKS.get(jobId)
-
-		if (null == future) {
-			throw new CronJobRuntimeException(MessageFormat.format(LOG_JOB_NOT_FOUND, jobId))
-		}
 
 		if (!future.cancel(false)) {
 			throw new CronJobRuntimeException(MessageFormat.format(LOG_UNABLE_TO_CANCEL_JOB, jobId))
