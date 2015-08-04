@@ -106,7 +106,10 @@ class CronServiceUnitSpec extends Specification {
         this.cronService.processJob(jobId)
 
         then:
-        2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [[id: jobId, jobOn: true, cron: cron],[id: jobId, jobOn: false, cron: cron]]
+        2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [
+            [id: jobId, jobOn: true, cron: cron],
+            [id: jobId, jobOn: false, cron: cron]
+        ]
         1 * this.threadPoolTaskScheduler.schedule(_, _)          >> future
         1 * future.cancel(_)                                     >> true
     }
@@ -123,7 +126,10 @@ class CronServiceUnitSpec extends Specification {
         this.cronService.processJob(jobId)
 
         then:
-        2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [[id: jobId, jobOn: false, cron: cron],[id: jobId, jobOn: true, cron: cron]]
+        2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [
+            [id: jobId, jobOn: false, cron: cron],
+            [id: jobId, jobOn: true, cron: cron]
+        ]
         1 * this.threadPoolTaskScheduler.schedule(_, _)          >> future
         0 * future.cancel(_)                                     >> true
     }
@@ -140,27 +146,33 @@ class CronServiceUnitSpec extends Specification {
         this.cronService.processJob(jobId)
 
         then:
-        2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [[id: jobId, jobOn: true, cron: cron],[id: jobId, jobOn: true, cron: cron]]
+        2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [
+            [id: jobId, jobOn: true, cron: cron],
+            [id: jobId, jobOn: true, cron: cron]
+        ]
         2 * this.threadPoolTaskScheduler.schedule(_, _)          >> future
         1 * future.cancel(_)                                     >> true
     }
 
-	def "adding a valid cron job and then disabling it fail when the service cant be stopped"() {
+    def "adding a valid cron job and then disabling it fail when the service cant be stopped"() {
 
-		setup:
-		String jobId                                             = "jobOnAndJobOff"
-		String cron                                              = "0 * * * * MON-FRI"
-		ScheduledFuture future                                   = Mock(ScheduledFuture.class)
+        setup:
+        String jobId                                             = "jobOnAndJobOff"
+        String cron                                              = "0 * * * * MON-FRI"
+        ScheduledFuture future                                   = Mock(ScheduledFuture.class)
 
-		when:
-		this.cronService.processJob(jobId)
-		this.cronService.processJob(jobId)
+        when:
+        this.cronService.processJob(jobId)
+        this.cronService.processJob(jobId)
 
-		then:
-		2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [[id: jobId, jobOn: true, cron: cron],[id: jobId, jobOn: false, cron: cron]]
-		1 * this.threadPoolTaskScheduler.schedule(_, _)          >> future
-		1 * future.cancel(_)                                     >> false
-		CronJobRuntimeException exception = thrown();
-		exception.message == MessageFormat.format(CronService.LOG_UNABLE_TO_CANCEL_JOB, "jobOnAndJobOff");
-	}
+        then:
+        2 * this.measureMentorJobsConfigFacade.findById(jobId)   >>> [
+            [id: jobId, jobOn: true, cron: cron],
+            [id: jobId, jobOn: false, cron: cron]
+        ]
+        1 * this.threadPoolTaskScheduler.schedule(_, _)          >> future
+        1 * future.cancel(_)                                     >> false
+        CronJobRuntimeException exception = thrown();
+        exception.message == MessageFormat.format(CronService.LOG_UNABLE_TO_CANCEL_JOB, "jobOnAndJobOff");
+    }
 }
