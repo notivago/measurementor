@@ -1,21 +1,19 @@
 package com.nike.mm.service.impl
 
-import com.google.common.collect.Maps
+import java.text.MessageFormat
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ScheduledFuture
+
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.scheduling.TaskScheduler
+import org.springframework.scheduling.Trigger
+import org.springframework.scheduling.support.CronTrigger
+import org.springframework.stereotype.Service
+
 import com.nike.mm.dto.MeasureMentorJobsConfigDto
 import com.nike.mm.facade.IMeasureMentorJobsConfigFacade
 import com.nike.mm.facade.IMeasureMentorRunFacade
 import com.nike.mm.service.ICronService
-
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.scheduling.Trigger
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
-import org.springframework.scheduling.support.CronTrigger
-import org.springframework.stereotype.Service
-
-import java.text.MessageFormat
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledFuture
 
 @Service
 class CronService implements ICronService {
@@ -27,7 +25,7 @@ class CronService implements ICronService {
 	static private final Map<String, ScheduledFuture> SCHEDULED_TASKS = new ConcurrentHashMap();
 
 	@Autowired
-	ThreadPoolTaskScheduler threadPoolTaskScheduler
+	TaskScheduler scheduler
 
 	@Autowired
 	IMeasureMentorRunFacade measureMentorRunFacade
@@ -80,7 +78,7 @@ class CronService implements ICronService {
 	private void addCronJob(String jobId, String cron) {
 
 		Trigger trigger = new CronTrigger(cron);
-		SCHEDULED_TASKS.put(jobId, this.threadPoolTaskScheduler.schedule({
+		SCHEDULED_TASKS.put(jobId, this.scheduler.schedule({
 			this.measureMentorRunFacade.runJobId(jobId)
 		}, trigger))
 	}

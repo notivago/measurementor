@@ -21,7 +21,7 @@ class CronServiceUnitSpec extends Specification {
         this.cronService                                  = new CronService()
         this.threadPoolTaskScheduler                      = Mock(ThreadPoolTaskScheduler.class)
         this.measureMentorJobsConfigFacade                = Mock(IMeasureMentorJobsConfigFacade.class)
-        this.cronService.threadPoolTaskScheduler          = this.threadPoolTaskScheduler
+        this.cronService.scheduler                        = this.threadPoolTaskScheduler
         this.cronService.measureMentorJobsConfigFacade    = this.measureMentorJobsConfigFacade
     }
 
