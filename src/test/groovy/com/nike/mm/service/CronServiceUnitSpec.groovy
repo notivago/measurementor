@@ -1,9 +1,12 @@
 package com.nike.mm.service
 
+import com.nike.mm.dto.MeasureMentorJobsConfigDto;
 import com.nike.mm.facade.IMeasureMentorJobsConfigFacade
 import com.nike.mm.service.impl.CronJobRuntimeException
 import com.nike.mm.service.impl.CronService
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 
 import spock.lang.Specification
@@ -174,5 +177,29 @@ class CronServiceUnitSpec extends Specification {
         1 * future.cancel(_)                                     >> false
         CronJobRuntimeException exception = thrown();
         exception.message == MessageFormat.format(CronService.LOG_UNABLE_TO_CANCEL_JOB, "jobOnAndJobOff");
+    }
+
+    def "load a collection of jobs on a empty service"() {
+        setup:
+        List<MeasureMentorJobsConfigDto> jobs                    = [
+            [id: "first", name: "first job", cron: "0 * * * * MON-FRI"],
+            [id: "second", name: "second job", cron: "0 * * * * MON-FRI"]
+        ]
+        
+        ScheduledFuture future                                   = Mock()
+        Page page                                                = Mock();
+
+        when:
+        cronService.loadJobs()
+
+        then:
+        1 * this.measureMentorJobsConfigFacade.findListOfJobs( _ as PageRequest)    >> page 
+        1 * page.getContent()                                                       >> [
+            ([id: "first", name: "first job", cron: "0 * * * * MON-FRI", jobOn: true] as MeasureMentorJobsConfigDto),
+            ([id: "second", name: "second job", cron: "0 * * * * MON-FRI", jobOn: true] as MeasureMentorJobsConfigDto)
+        ]
+        
+        2 * this.threadPoolTaskScheduler.schedule(_, _)                             >> future
+        0 * future.cancel(_)                                                        >> true
     }
 }

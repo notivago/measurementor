@@ -4,7 +4,10 @@ import java.text.MessageFormat
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ScheduledFuture
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageRequest
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.Trigger
 import org.springframework.scheduling.support.CronTrigger
@@ -22,7 +25,9 @@ class CronService implements ICronService {
     static final String LOG_JOB_NOT_FOUND = "Unable to find job with ID {0}"
     static final String LOG_UNABLE_TO_CANCEL_JOB = "Found but could not cancel job with ID {0}"
 
-    static private final Map<String, ScheduledFuture> SCHEDULED_TASKS = new ConcurrentHashMap();
+    private static final PageRequest EVERYTHING = new PageRequest(0, Integer.MAX_VALUE)
+
+    private final Map<String, ScheduledFuture> scheduledTasks = new ConcurrentHashMap();
 
     @Autowired
     TaskScheduler scheduler
@@ -33,17 +38,24 @@ class CronService implements ICronService {
     @Autowired
     IMeasureMentorJobsConfigFacade measureMentorJobsConfigFacade
 
+    @PostConstruct
+    void loadJobs() {
+        def jobs = measureMentorJobsConfigFacade.findListOfJobs(EVERYTHING).getContent();
+        jobs.each( this.&processJob )
+    }
+    
     @Override
     void processJob(String jobId) {
-
-        MeasureMentorJobsConfigDto mmJConfigDto = this.retrieveJobFromId(jobId)
-        removeCronJob(jobId)
-
-        if (mmJConfigDto.cron && mmJConfigDto.jobOn) {
-            this.addCronJob(jobId, mmJConfigDto.cron)
-        }
+        processJob(this.retrieveJobFromId(jobId))
     }
 
+    void processJob(MeasureMentorJobsConfigDto mmJConfigDto) {
+        removeCronJob(mmJConfigDto)
+        addCronJob(mmJConfigDto)
+    }
+
+    
+    
     /**
      * Retrieve the job configuration from the database.
      * @param jobId
@@ -62,23 +74,30 @@ class CronService implements ICronService {
      * Cancel a cron job and remove it from the list of registered cron jobs
      * @param jobId - unique identifier for cron job
      */
-    private static void removeCronJob(final String jobId) {
-        if (!SCHEDULED_TASKS.containsKey(jobId)) {
+    private void removeCronJob(MeasureMentorJobsConfigDto mmJConfigDto) {
+        String jobId = mmJConfigDto.id;
+        if (!scheduledTasks.containsKey(jobId)) {
             return;
         }
-        final ScheduledFuture future = SCHEDULED_TASKS.get(jobId)
+        final ScheduledFuture future = scheduledTasks.get(jobId)
 
         if (!future.cancel(false)) {
             throw new CronJobRuntimeException(MessageFormat.format(LOG_UNABLE_TO_CANCEL_JOB, jobId))
         }
 
-        SCHEDULED_TASKS.remove(jobId)
+        scheduledTasks.remove(jobId)
     }
 
-    private void addCronJob(String jobId, String cron) {
-
+    private void addCronJob(MeasureMentorJobsConfigDto mmJConfigDto) {
+        String cron = mmJConfigDto.cron;
+        String jobId = mmJConfigDto.id;
+        
+        if ( !(cron && mmJConfigDto.jobOn) ) {
+            return;
+        }
+        
         Trigger trigger = new CronTrigger(cron);
-        SCHEDULED_TASKS.put(jobId, this.scheduler.schedule({
+        scheduledTasks.put(jobId, this.scheduler.schedule({
             this.measureMentorRunFacade.runJobId(jobId)
         }, trigger))
     }
